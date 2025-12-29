@@ -44,10 +44,13 @@
 import { Form, Field, ErrorMessage } from 'vee-validate';
 import { toTypedSchema } from '@vee-validate/zod';
 import * as z from 'zod';
-import { ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { useAuthStore } from '../stores/auth';
+import { useFormErrors } from '../composables/useFormErrors';
 
 const router = useRouter();
+const authStore = useAuthStore();
+const { handleValidationErrors } = useFormErrors();
 
 // Define Zod validation schema
 const loginSchema = toTypedSchema(
@@ -59,16 +62,17 @@ const loginSchema = toTypedSchema(
     password: z
       .string({ required_error: 'Password is required' })
       .nonempty('Password is required')
-      .min(6, 'Password must be at least 6 characters'),
   })
 );
 
-const initialValues = ref({ email: '', password: '' });
+const initialValues = { email: '', password: '' };
 
-const onSubmit = (values) => {
-  // Handle validated form submission
-  console.log('Validated values:', values);
-  // In a real app, this would call an API with values.email and values.password
-  router.push('/dashboard');
+const onSubmit = async (values, { setErrors }) => {
+  try {
+    await authStore.login(values);
+    router.push('/dashboard');
+  } catch (error) {
+    handleValidationErrors(error, setErrors);
+  }
 };
 </script>

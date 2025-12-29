@@ -3,7 +3,7 @@
     <div class="max-w-md w-full mx-auto bg-white rounded-xl shadow-md overflow-hidden">
       <div class="p-8">
         <h2 class="text-2xl font-bold text-center mb-6">Register</h2>
-        <Form @submit="onSubmit" :validation-schema="registerSchema" :initial-values="values">
+        <Form @submit="onSubmit" :validation-schema="registerSchema" :initial-values="initialValues">
           <div class="mb-4">
             <label for="name" class="block text-sm font-medium text-gray-700">Name</label>
             <Field
@@ -32,15 +32,15 @@
             <ErrorMessage name="password" class="text-red-500 text-sm mt-1 block" />
           </div>
           <div class="mb-6">
-            <label for="confirm_password" class="block text-sm font-medium text-gray-700"
+            <label for="password_confirmation" class="block text-sm font-medium text-gray-700"
               >Confirm password</label
             >
             <Field
-              name="confirm_password"
+              name="password_confirmation"
               type="password"
               class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
             />
-            <ErrorMessage name="confirm_password" class="text-red-500 text-sm mt-1 block" />
+            <ErrorMessage name="password_confirmation" class="text-red-500 text-sm mt-1 block" />
           </div>
           <button
             type="submit"
@@ -65,11 +65,13 @@ import { Form, Field, ErrorMessage } from 'vee-validate';
 import { toTypedSchema } from '@vee-validate/zod';
 import * as z from 'zod';
 import { useRouter } from 'vue-router';
-import { ref } from 'vue';
+import { useAuthStore } from '../stores/auth';
+import { useFormErrors } from '../composables/useFormErrors';
 
 const router = useRouter();
+const authStore = useAuthStore();
+const { handleValidationErrors } = useFormErrors();
 
-// Define Zod validation schema
 const registerSchema = toTypedSchema(
   z
     .object({
@@ -82,22 +84,24 @@ const registerSchema = toTypedSchema(
         .string({ required_error: 'Password is required' })
         .nonempty('Password is required')
         .min(6, 'Password must be at least 6 characters'),
-      confirm_password: z
+      password_confirmation: z
         .string({ required_error: 'Confirm password is required' })
         .nonempty('Confirm password is required'),
     })
-    .refine((data) => data.password === data.confirm_password, {
+    .refine((data) => data.password === data.password_confirmation, {
       message: 'Passwords do not match',
-      path: ['confirm_password'],
+      path: ['password_confirmation'],
     })
 );
 
-const values = ref({ name: '', email: '', password: '', confirm_password: '' });
+const initialValues = { name: '', email: '', password: '', password_confirmation: '' };
 
-const onSubmit = (values) => {
-  // Handle validated form submission
-  console.log('Registered values:', values);
-  // In a real app, this would call an API or the auth store to register
-  router.push('/dashboard');
+const onSubmit = async (values, { setErrors }) => {
+  try {
+    await authStore.register(values);
+    router.push('/dashboard');
+  } catch (error) {
+    handleValidationErrors(error, setErrors);
+  }
 };
 </script>
