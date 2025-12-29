@@ -1,7 +1,5 @@
 import axios from 'axios';
-import { useRouter } from 'vue-router';
-
-const router = useRouter();
+import router from '../router';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
@@ -26,21 +24,29 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // If error is 401 and we haven't tried to refresh yet
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (
+      error.response?.status === 401 &&
+      !originalRequest._retry &&
+      !originalRequest.url?.includes('/refresh')
+    ) {
       originalRequest._retry = true;
 
       try {
-        // Attempt to refresh the token on the first 401 error
+        // Attempt to refresh the token
         await api.post('/refresh');
 
         // Retry the original request
         return api(originalRequest);
       } catch (refreshError) {
-        // Redirect to login page
+        // Refresh failed, redirect to login
         router.push('/login');
         return Promise.reject(refreshError);
       }
+    }
+
+    // If this was a refresh request that failed, redirect to login
+    if (error.response?.status === 401 && originalRequest.url?.includes('/refresh')) {
+      router.push('/login');
     }
 
     return Promise.reject(error);
