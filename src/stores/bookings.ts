@@ -31,6 +31,25 @@ export const useBookingsStore = defineStore('bookings', () => {
     }
   };
 
+  const fetchAdminBookings = async (params?: {
+    search?: string;
+    status?: string;
+    date_from?: string;
+    date_to?: string;
+  }) => {
+    loading.value = true;
+    error.value = null;
+    try {
+      const response = await api.get('/admin/bookings', { params });
+      bookings.value = response.data.bookings || [];
+    } catch (err: unknown) {
+      error.value = err instanceof Error ? err.message : 'Failed to fetch admin bookings';
+      bookings.value = [];
+    } finally {
+      loading.value = false;
+    }
+  };
+
   const createBooking = async (data: CreateBookingData) => {
     loading.value = true;
     error.value = null;
@@ -53,8 +72,6 @@ export const useBookingsStore = defineStore('bookings', () => {
       const response = await api.put(`/bookings/${id}`, data);
       const index = bookings.value.findIndex(b => b.id === id);
       if (index !== -1) {
-        // Preserve the user relationship from the existing booking
-        // since the update response might not include it
         const existingUser = bookings.value[index].user;
         bookings.value[index] = {
           ...response.data.booking,
@@ -88,6 +105,9 @@ export const useBookingsStore = defineStore('bookings', () => {
     const result = bookings.value.some((b) => {
       if (b.id === booking.id || b.status === 'cancelled') return false;
 
+      // Only check for conflicts with bookings from the same user
+      if (b.user_id !== booking.user_id) return false;
+
       // Extract just the date part (YYYY-MM-DD) from ISO format
       const bookingDate = booking.date.split('T')[0];
       const otherDate = b.date.split('T')[0];
@@ -117,7 +137,11 @@ export const useBookingsStore = defineStore('bookings', () => {
     const sameDay = bookings.value
       .filter(b => {
         const otherDate = b.date.split('T')[0];
-        return otherDate === bookingDate && b.id !== booking.id && b.status !== 'cancelled';
+        // Check for same day, different booking ID, not cancelled, AND same user
+        return otherDate === bookingDate && 
+               b.id !== booking.id && 
+               b.status !== 'cancelled' &&
+               b.user_id === booking.user_id;
       })
       .sort((a, b) => a.start_time.localeCompare(b.start_time));
 
@@ -147,6 +171,7 @@ export const useBookingsStore = defineStore('bookings', () => {
     loading,
     error,
     fetchBookings,
+    fetchAdminBookings,
     createBooking,
     updateBooking,
     deleteBooking,

@@ -18,6 +18,9 @@ export const useAuthStore = defineStore('auth', () => {
   const authInitialized = ref(false);
 
   const isAuthenticated = computed(() => !!user.value);
+  const canViewEntireBookings = computed(() =>
+    user.value?.permissions?.includes('view entire bookings')
+  );
 
   const register = async (data: RegisterData) => {
     loading.value = true;
@@ -111,6 +114,7 @@ export const useAuthStore = defineStore('auth', () => {
     error,
     authInitialized,
     isAuthenticated,
+    canViewEntireBookings,
     register,
     login,
     logout,

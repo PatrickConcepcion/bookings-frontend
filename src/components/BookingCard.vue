@@ -1,7 +1,7 @@
 <template>
   <div
     :class="[
-      'bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow border-l-4',
+      'bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow border-l-4 flex flex-col',
       conflictClass
     ]"
   >
@@ -18,28 +18,30 @@
       </span>
     </div>
 
-    <div class="space-y-2">
+    <div class="space-y-2 flex-grow">
       <div v-if="booking.notes" class="text-gray-700">
         <p class="text-sm">{{ booking.notes }}</p>
       </div>
     </div>
 
-    <div class="mt-4 italic text-sm text-gray-600">
-      Booked by: {{ booking.user?.name || 'Unknown User' }}
+    <div v-if="showBookedBy" class="mt-4 italic text-sm text-gray-600">
+      Booked by: {{ booking.user?.name || 'N/A' }}
     </div>
 
-    <div class="mt-4 flex gap-2">
+    <div v-if="!showBookedBy" class="mt-4 flex gap-2 justify-end">
       <button
         @click="$emit('edit', booking)"
-        class="flex-1 px-3 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+        class="p-2 cursor-pointer text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center justify-center"
+        title="Edit"
       >
-        Edit
+        <font-awesome-icon :icon="['fas', 'pen-to-square']" />
       </button>
       <button
         @click="handleDelete"
-        class="flex-1 px-3 py-2 text-sm bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+        class="p-2 cursor-pointer text-sm bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors flex items-center justify-center"
+        title="Delete"
       >
-        Delete
+        <font-awesome-icon :icon="['fas', 'trash-can']" />
       </button>
     </div>
   </div>
@@ -49,6 +51,11 @@
 import { computed } from 'vue';
 import dayjs from 'dayjs';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
+import { library } from '@fortawesome/fontawesome-svg-core';
+import { faPenToSquare, faTrashCan } from '@fortawesome/free-solid-svg-icons';
+
+library.add(faPenToSquare, faTrashCan);
 
 dayjs.extend(customParseFormat);
 
@@ -62,6 +69,10 @@ const props = defineProps({
     default: false
   },
   hasGap: {
+    type: Boolean,
+    default: false
+  },
+  showBookedBy: {
     type: Boolean,
     default: false
   }

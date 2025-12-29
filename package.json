@@ -12,6 +12,9 @@
     "lint:fix": "eslint --ext .js,.ts,.vue src --fix"
   },
   "dependencies": {
+    "@fortawesome/fontawesome-svg-core": "^7.1.0",
+    "@fortawesome/free-solid-svg-icons": "^7.1.0",
+    "@fortawesome/vue-fontawesome": "^3.1.2",
     "@vee-validate/zod": "^4.15.1",
     "axios": "^1.13.2",
     "dayjs": "^1.11.19",

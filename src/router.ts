@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import Login from './pages/Login.vue';
 import Register from './pages/Register.vue';
 import Dashboard from './pages/Dashboard.vue';
+import AdminDashboard from './pages/AdminDashboard.vue';
 import { useAuthStore } from './stores/auth';
 
 const routes = [
@@ -11,6 +12,11 @@ const routes = [
   {
     path: '/dashboard',
     component: Dashboard,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/admin/dashboard',
+    component: AdminDashboard,
     meta: { requiresAuth: true },
   },
 ];

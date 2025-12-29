@@ -1,23 +1,16 @@
 <template>
-  <DashboardLayout title="Dashboard">
+  <DashboardLayout title="Admin Dashboard">
     <template #actions>
       <router-link
-        v-if="authStore.canViewEntireBookings"
-        to="/admin/dashboard"
+        to="/dashboard"
         class="text-blue-600 hover:text-blue-800 font-medium"
       >
-        Admin Dashboard
+        My Bookings
       </router-link>
     </template>
 
     <div class="flex justify-between items-center mb-6">
-      <h2 class="text-2xl font-semibold text-gray-900">Available Bookings</h2>
-      <button
-        @click="openCreateModal"
-        class="bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-      >
-        Create Booking
-      </button>
+      <h2 class="text-2xl font-semibold text-gray-900">All Users' Bookings</h2>
     </div>
 
     <BookingFilters @filter="handleFilter" />
@@ -39,16 +32,15 @@
           <SkeletonLoader class="h-4 w-3/4" />
         </div>
 
-        <!-- Bottom section -->
-        <div class="mt-4 flex gap-2 justify-end">
-          <SkeletonLoader class="h-8 w-8 rounded" />
-          <SkeletonLoader class="h-8 w-8 rounded" />
+        <!-- Booked by section -->
+        <div class="mt-4">
+          <SkeletonLoader class="h-4 w-24" />
         </div>
       </div>
     </div>
 
     <div v-else-if="bookingsStore.bookings.length === 0" class="text-center py-12">
-      <p class="text-gray-500">No bookings available. Create one to get started!</p>
+      <p class="text-gray-500">No bookings available.</p>
     </div>
 
     <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -58,6 +50,7 @@
         :booking="booking"
         :has-conflict="bookingsStore.checkConflict(booking)"
         :has-gap="bookingsStore.checkGap(booking)"
+        :show-booked-by="true"
         @edit="handleEdit"
         @delete-confirm="handleDeleteConfirm"
       />
@@ -90,12 +83,12 @@ import { useAuthStore } from '../stores/auth';
 import { useBookingsStore } from '../stores/bookings';
 import DashboardLayout from '../layouts/DashboardLayout.vue';
 import BookingCard from '../components/BookingCard.vue';
-import BookingFilters from '../components/BookingFilters.vue';
 import BookingModal from '../components/BookingModal.vue';
+import BookingFilters from '../components/BookingFilters.vue';
 import ConfirmationModal from '../components/ConfirmationModal.vue';
 import SkeletonLoader from '../components/SkeletonLoader.vue';
 
-const router = useRouter();
+const router = useRouter(); // Keeping router for consistency if needed later, but removed unused logout logic requiring it
 const authStore = useAuthStore();
 const bookingsStore = useBookingsStore();
 const isModalOpen = ref(false);
@@ -119,7 +112,7 @@ const fetchWithFilters = () => {
   if (filters.value.dateFrom) params.date_from = filters.value.dateFrom;
   if (filters.value.dateTo) params.date_to = filters.value.dateTo;
 
-  bookingsStore.fetchBookings(params);
+  bookingsStore.fetchAdminBookings(params);
 };
 
 const debouncedFetch = () => {
@@ -137,20 +130,16 @@ const handleFilter = (newFilters) => {
   filters.value = newFilters;
 };
 
-const openCreateModal = () => {
-  selectedBooking.value = null;
-  isModalOpen.value = true;
-};
-
 const handleEdit = (booking) => {
   selectedBooking.value = booking;
   isModalOpen.value = true;
 };
 
-const closeModal = () => {
+const closeModal = () => {  // Re-adding closeModal as it was missing in target content but needed for template
   isModalOpen.value = false;
   selectedBooking.value = null;
 };
+
 
 const handleBookingCreated = () => {
   fetchWithFilters();
@@ -179,6 +168,6 @@ const handleDeleteConfirmed = async () => {
 };
 
 onMounted(() => {
-  bookingsStore.fetchBookings();
+  bookingsStore.fetchAdminBookings();
 });
 </script>
