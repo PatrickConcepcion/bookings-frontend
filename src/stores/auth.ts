@@ -15,6 +15,7 @@ export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null);
   const loading = ref(false);
   const error = ref<string | null>(null);
+  const authInitialized = ref(false);
 
   const isAuthenticated = computed(() => !!user.value);
 
@@ -95,8 +96,12 @@ export const useAuthStore = defineStore('auth', () => {
   const initAuth = async () => {
     try {
       await me();
-    } catch {
+    } catch (error) {
+      // Clear user state on auth check failure
       user.value = null;
+      // Don't redirect here - let the router guard handle it
+    } finally {
+      authInitialized.value = true;
     }
   };
 
@@ -104,6 +109,7 @@ export const useAuthStore = defineStore('auth', () => {
     user,
     loading,
     error,
+    authInitialized,
     isAuthenticated,
     register,
     login,
