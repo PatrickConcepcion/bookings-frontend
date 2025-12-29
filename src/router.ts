@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import Login from './components/Login.vue';
-import Register from './components/Register.vue';
-import Dashboard from './components/Dashboard.vue';
+import Login from './pages/Login.vue';
+import Register from './pages/Register.vue';
+import Dashboard from './pages/Dashboard.vue';
 import { useAuthStore } from './stores/auth';
 
 const routes = [
@@ -27,19 +27,18 @@ router.beforeEach(async (to, _from, next) => {
   if (to.meta.requiresAuth) {
     // Check if user is authenticated
     if (!authStore.isAuthenticated) {
-      try {
-        // Try to get user info (will work if cookie is valid)
-        await authStore.me();
-        next();
-      } catch {
-        // Not authenticated, redirect to login
-        next('/login');
-      }
+      // Redirect to login
+      next('/login');
     } else {
       next();
     }
   } else {
-    next();
+    // Redirect to dashboard if already authenticated and trying to access login/register
+    if ((to.path === '/login' || to.path === '/register') && authStore.isAuthenticated) {
+      next('/dashboard');
+    } else {
+      next();
+    }
   }
 });
 

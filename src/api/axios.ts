@@ -3,12 +3,15 @@ import router from '../router';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
-  withCredentials: true,
+  withCredentials: true, // Required for sending cookies with requests
   headers: {
     'Content-Type': 'application/json',
     Accept: 'application/json',
   },
 });
+
+// Endpoints that should NOT trigger token refresh
+const AUTH_ENDPOINTS = ['/login', '/register', '/refresh', '/me', '/logout'];
 
 api.interceptors.request.use(
   (config) => {
@@ -23,11 +26,16 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+    const requestUrl = originalRequest.url || '';
 
+    // Check if this is an auth-related endpoint that shouldn't trigger refresh
+    const isAuthEndpoint = AUTH_ENDPOINTS.some(endpoint => requestUrl.includes(endpoint));
+
+    // Don't retry for auth endpoints or if already retried
     if (
       error.response?.status === 401 &&
       !originalRequest._retry &&
-      !originalRequest.url?.includes('/refresh')
+      !isAuthEndpoint
     ) {
       originalRequest._retry = true;
 
@@ -38,15 +46,18 @@ api.interceptors.response.use(
         // Retry the original request
         return api(originalRequest);
       } catch (refreshError) {
-        // Refresh failed, redirect to login
-        router.push('/login');
+        // Refresh failed, clear auth state
+        const { useAuthStore } = await import('../stores/auth');
+        const authStore = useAuthStore();
+        authStore.user = null;
+
+        // Only redirect if not on auth pages
+        const currentPath = window.location.pathname;
+        if (currentPath !== '/login' && currentPath !== '/register') {
+          router.push('/login');
+        }
         return Promise.reject(refreshError);
       }
-    }
-
-    // If this was a refresh request that failed, redirect to login
-    if (error.response?.status === 401 && originalRequest.url?.includes('/refresh')) {
-      router.push('/login');
     }
 
     return Promise.reject(error);
